@@ -3,13 +3,18 @@ package com.zhouyao.boot;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
-import com.sun.tools.javac.util.List;
+//import com.sun.tools.javac.util.List;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import javax.lang.model.element.Modifier;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.*;
+import java.util.List;
+//import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -18,7 +23,8 @@ public class CodeGenerate {
 //    genarateDemo();
 
     //1.从excel读取配置文件
-    List<TestCaseBean> testCaseBeans = GeneralBeans();
+//    List<TestCaseBean> testCaseBeans = GeneralBeans();
+    List<TestCaseBean> testCaseBeans = readXlsxFile("xx");
 
     //2.处理
     //一个包下可以有多个类，每个类有多个方法。每个方法是一个testcase。
@@ -91,42 +97,83 @@ public class CodeGenerate {
 
 
   public static List<TestCaseBean> GeneralBeans() {
-    List<TestCaseBean> testCase = List.of(
+    HashMap<String, String> hashMap = new HashMap<>();
+    hashMap.put("hello","world");
+    hashMap.put("zhou","yao");
+    List<TestCaseBean> testCase = com.sun.tools.javac.util.List.of(
             new TestCaseBean(
                     "org.xx.yy.zz",
                     "Rate",
                     "Invivid",
                     "BO",
                     "mainLIneA",
-                    new String[][] {{ "Hello", "World" },
-                    { "John", "Doe" },}),
+                    hashMap),
             new TestCaseBean(
                     "org.xx.yy.zz",
                     "Rate",
                     "All",
                     "BO",
                     "mainLIneA",
-                    new String[][] {{ "Hello", "World" },
-                    { "John", "Doe" },}),
+                    hashMap),
             new TestCaseBean(
                     "org.xx.yy.aa",
                     "Fee",
                     "NullString",
                     "BO",
                     "mainLIneA",
-                    new String[][] {{ "Hello", "World" },
-                    { "John", "Doe" },}),
+                    hashMap),
             new TestCaseBean(
                     "org.xx.yy.aa",
                     "Fee",
                     "EmptyName",
                     "BO",
                     "mainLIneA",
-                    new String[][] {{ "Hello", "World" },
-                    { "John", "Doe" },})
+                    hashMap)
     );
     return testCase;
   }
+
+  private static List<TestCaseBean> readXlsxFile(String filePath) throws IOException {
+    String path= "/Users/zhouyao/Downloads/CodeDemov1.xlsx";
+    XSSFWorkbook workbook = readFile(path);
+    XSSFSheet sheet1 = workbook.getSheet("Sheet1");
+    int rowNum = sheet1.getLastRowNum();
+
+    List<TestCaseBean> cases = new ArrayList<TestCaseBean>();
+    //第0行为表头
+    for (int i = 1; i < rowNum+1; i++) {
+      ArrayList<ArrayList<String>> filds = new ArrayList<>();
+      HashMap<String, String> fildHashmap = new HashMap<>();
+
+      for (int j = 6; j < sheet1.getRow(i).getLastCellNum(); j++) {
+        fildHashmap.put(
+                parseSheetContent(sheet1,0,j),//表头
+                parseSheetContent(sheet1, i, j));//值
+      }
+
+      TestCaseBean testCaseBeans = new TestCaseBean(
+              parseSheetContent(sheet1, i, 1),
+              parseSheetContent(sheet1, i, 2),
+              parseSheetContent(sheet1, i, 3),
+              parseSheetContent(sheet1, i, 4),
+              parseSheetContent(sheet1, i, 5),
+              fildHashmap);
+
+      cases.add(testCaseBeans);
+    }
+    return cases;
+  }
+
+  private static String parseSheetContent(XSSFSheet sheet, int row, int cell) {
+    return sheet.getRow(row).getCell(cell).toString();
+  }
+
+  private static XSSFWorkbook readFile(String filename) throws IOException {
+    try (FileInputStream fis = new FileInputStream(filename)) {
+      return new XSSFWorkbook(fis);        // NOSONAR - should not be closed here
+    }
+  }
+
 
   private static void genarateDemo() throws IOException {
     HashMap<String, String> stringStringHashMap = new HashMap<>();
@@ -178,109 +225,4 @@ public class CodeGenerate {
 
     javaFile.writeTo(System.out);
   }
-
-//  public static ArrayList<HashMap<String, String>> GenerateHash() {
-//    ArrayList<HashMap<String, String>> hashMaps = new ArrayList<>();
-
-//    new TestCaseBean(
-//            "org.xx.yy.zz",
-//            "Rate",
-//            "Invivid",
-//            "BO",
-//            "mainLIneA",
-//            "nameA",
-//            "nameB",
-//            "nameC",
-//            "nameD"
-//    );
-//
-//    HashMap<String, String> stringHashMap2 = getMap(
-//            "org.xx.yy.zz",
-//            "Rate",
-//            "All",
-//            "BO",
-//            "mainLIneA",
-//            "nameA1",
-//            "nameB1",
-//            "nameC1",
-//            "nameD1"
-//    );
-//
-//    TestCaseBean testCaseBean = new TestCaseBean(
-//            "org.xx.yy.aa",
-//            "Fee",
-//            "NullString",
-//            "BO",
-//            "mainLIneA",
-//            List.of("nameA2",
-//                    "nameB2",
-//                    "nameC2",
-//                    "nameD2")
-//    );
-//
-//    TestCaseBean testCaseBean1 = new TestCaseBean(
-//            "org.xx.yy.aa",
-//            "Fee",
-//            "EmptyName",
-//            "BO",
-//            "mainLIneA",
-//            List.of("nameA3",
-//                    "nameB3",
-//                    "nameC3",
-//                    "nameD3")
-//    );
-//
-//    TestCaseBean testCaseBean2 = new TestCaseBean(
-//            "org.xx.yy.bb",
-//            "Accr",
-//            "GetName",
-//            "BO",
-//            "mainLIneA",
-//            List.of("nameA4",
-//                    "nameB4",
-//                    "nameC4",
-//                    "nameD4"
-//            );
-//
-//    TestCaseBean testCaseBean3 = new TestCaseBean(
-//            "org.xx.yy.bb",
-//            "Accr",
-//            "HideGoald",
-//            "BO",
-//            "mainLIneA",
-//            List.of("nameA5",
-//                    "nameB5",
-//                    "nameC5",
-//                    "nameD5"
-//            );
-//    hashMaps.add(stringHashMap1);
-//    hashMaps.add(stringHashMap2);
-//    hashMaps.add(stringHashMap3);
-//    hashMaps.add(stringHashMap4);
-//    hashMaps.add(stringHashMap5);
-//    hashMaps.add(stringHashMap6);
-//    return hashMaps;
-//  }
-//
-//  public static HashMap<String, String> getMap(String PackageName,
-//                                               String ClassName,
-//                                               String MethodName,
-//                                               String MainBO,
-//                                               String TestMethod,
-//                                               String FieldA,
-//                                               String FieldB,
-//                                               String FieldC,
-//                                               String FieldD) {
-//    HashMap<String, String> stringStringHashMap1 = new HashMap<>();
-//    stringStringHashMap1.put("PackageName", PackageName);
-//    stringStringHashMap1.put("ClassName", ClassName);
-//    stringStringHashMap1.put("MethodName", MethodName);
-//    stringStringHashMap1.put("MainBO", MainBO);
-//    stringStringHashMap1.put("TestMethod", TestMethod);
-//    stringStringHashMap1.put("FieldA", FieldA);
-//    stringStringHashMap1.put("FieldB", FieldB);
-//    stringStringHashMap1.put("FieldC", FieldC);
-//    stringStringHashMap1.put("FieldD", FieldD);
-//    return stringStringHashMap1;
-//  }
 }

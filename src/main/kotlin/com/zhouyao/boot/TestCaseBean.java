@@ -14,8 +14,8 @@ public class TestCaseBean {
   private String TestMethod;
   private Map<String, String> Fields;
 
-  public TestCaseBean() {
-  }
+//  public TestCaseBean() {
+//  }
 
   @Override
   public String toString() {
@@ -34,14 +34,15 @@ public class TestCaseBean {
                       String methodName,
                       String mainBO,
                       String testMethod,
-                      String[][] fields) {
+//                      String[][] fields) {
+                      Map<String, String> fields) {
     PackageName = packageName;
     ClassName = className;
     MethodName = methodName;
     MainBO = mainBO;
     TestMethod = testMethod;
-    Fields = Stream.of(fields).collect(Collectors.toMap(data -> data[0], data -> data[1]));
-  }
+//    Fields = Stream.of(fields).collect(Collectors.toMap(data -> data[0], data -> data[1]));
+    Fields =  fields; }
 
   public String getPackageName() {
     return PackageName;
