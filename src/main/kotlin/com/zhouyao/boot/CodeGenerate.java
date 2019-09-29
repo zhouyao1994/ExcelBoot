@@ -6,14 +6,12 @@ import com.squareup.javapoet.TypeSpec;
 //import com.sun.tools.javac.util.List;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.junit.Assert;
 
 import javax.lang.model.element.Modifier;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.List;
+import java.util.*;
 //import java.util.*;
 import java.util.stream.Collectors;
 
@@ -35,12 +33,12 @@ public class CodeGenerate {
 
     //3.输出
     //按分组结果 在按 类名分组一次  （同一个类下可以有多个测试方法）
-    collect.forEach((pakegeName,v)->{
+    collect.forEach((pakegeName, v) -> {
       Map<String, java.util.List<TestCaseBean>> classGroupBy = v
               .stream()
               .collect(Collectors.groupingBy(TestCaseBean::getClassName));
 
-      classGroupBy.forEach((className, cases) ->{
+      classGroupBy.forEach((className, cases) -> {
         try {
           System.out.println("=============");
           GenerateFiles(pakegeName, className, cases).writeTo(System.out);
@@ -50,6 +48,8 @@ public class CodeGenerate {
       });
 
     });
+
+    Assert.assertEquals("xx", "xx");
   }
 
   private static JavaFile GenerateFiles(String pakegeName,
@@ -62,32 +62,65 @@ public class CodeGenerate {
     for (TestCaseBean caseIt : cases) {
 //    TestCaseBean caseIt = cases.get(0);
 
-    String methodName = caseIt.getMethodName();
-    String caseItClassName = caseIt.getClassName();
-    String mainBO = caseIt.getMainBO();
-    String testMethod = caseIt.getTestMethod();
-    Map<String, String> fields = caseIt.getFields();
+      String methodName = caseIt.getMethodName();
+      String caseItClassName = caseIt.getClassName();
+      String mainBO = caseIt.getMainBO();
+      String testMethod = caseIt.getTestMethod();
+      Map<String, String> fields = caseIt.getFields();
+      String assertSentence = caseIt.getAssertSentence();
+      String nOrP = caseIt.getNorP();
+      Integer forwardDependencyNum = caseIt.getForwardDependencyNum();
 
-    //1.1 创建单个方法
-    MethodSpec.Builder builderLocal = MethodSpec.methodBuilder(methodName)
-            .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-            .returns(void.class)
-            .addParameter(String[].class, "args")
-            //1.new 对象,N表示name，S表示String
-            .addStatement("$N testObject = new $N()", mainBO, mainBO);
-    //1.2 为新建BO设置属性
-    fields.forEach((key, value) -> {
-      builderLocal.addStatement("testObject.set$N($S)", key, value);
-    });
+      //1.1 创建单个方法
+      MethodSpec.Builder builderLocal = MethodSpec.methodBuilder(methodName)
+              .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+              .returns(void.class)
+              .addParameter(String[].class, "args")
+              .addStatement("// 测试用例");
 
-    //1.3 run测试函数的逻辑代码
-    builderLocal.addStatement("$N($N)", testMethod, "testObject");
 
-    MethodSpec localClass = builderLocal
-            .build();
-    //2.把方法放到类中
+
+
+      //new 对象,N表示name，S表示String
+      builderLocal.addStatement("$N testObject = new $N()", mainBO, mainBO);
+      //1.2 为新建BO设置属性
+      fields.forEach((key, value) -> {
+        builderLocal.addStatement("testObject.set$N($S)", key, value);
+      });
+
+      //1.3 run测试函数的逻辑代码
+//      builderLocal.addStatement("$N($N)", testMethod, "testObject");
+
+      switch (nOrP) {
+        case ("P"):
+          //1.4添加 正常测试用例的：Assert 参数
+          builderLocal.addStatement("$N($N)", testMethod, "testObject");
+          Arrays.asList(assertSentence.split("\\;")).forEach(it->
+                  builderLocal.addStatement(it)
+          );
+          break;
+        case ("N"):
+          //1.5 添加异常测试用例的 Assert 参数
+          builderLocal.beginControlFlow("try")
+                  .addStatement("$N($N)", testMethod, "testObject")
+                  .addStatement("Assert.fail()")
+                  .nextControlFlow("catch ($T e)", Exception.class);
+          Arrays.asList(assertSentence.split("\\;")).forEach(it->
+                  builderLocal.addStatement(it)
+          );
+
+          builderLocal.endControlFlow();
+          break;
+        default:
+          break;
+      }
+
+
+      MethodSpec localClass = builderLocal
+              .build();
+      //2.把方法放到类中
       builder.addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-            .addMethod(localClass);
+              .addMethod(localClass);
     }
 
     //3.把类放到包中，返回文件
@@ -95,69 +128,44 @@ public class CodeGenerate {
             .build();
   }
 
-
-  public static List<TestCaseBean> GeneralBeans() {
-    HashMap<String, String> hashMap = new HashMap<>();
-    hashMap.put("hello","world");
-    hashMap.put("zhou","yao");
-    List<TestCaseBean> testCase = com.sun.tools.javac.util.List.of(
-            new TestCaseBean(
-                    "org.xx.yy.zz",
-                    "Rate",
-                    "Invivid",
-                    "BO",
-                    "mainLIneA",
-                    hashMap),
-            new TestCaseBean(
-                    "org.xx.yy.zz",
-                    "Rate",
-                    "All",
-                    "BO",
-                    "mainLIneA",
-                    hashMap),
-            new TestCaseBean(
-                    "org.xx.yy.aa",
-                    "Fee",
-                    "NullString",
-                    "BO",
-                    "mainLIneA",
-                    hashMap),
-            new TestCaseBean(
-                    "org.xx.yy.aa",
-                    "Fee",
-                    "EmptyName",
-                    "BO",
-                    "mainLIneA",
-                    hashMap)
-    );
-    return testCase;
-  }
-
   private static List<TestCaseBean> readXlsxFile(String filePath) throws IOException {
-    String path= "/Users/zhouyao/Downloads/CodeDemov1.xlsx";
+    String path = "/Users/zhouyao/Downloads/CodeDemov1.xlsx";
     XSSFWorkbook workbook = readFile(path);
     XSSFSheet sheet1 = workbook.getSheet("Sheet1");
     int rowNum = sheet1.getLastRowNum();
+    int pakegeColNum = 1;
+    int classColNum = 2;
+    int methodColNum = 3;
+    int norPColNum = 4;
+    int mainboColNum = 5;
+    int assertSentenceNum = 6;
+    int testMethdNum = 7;
+    int fildStartNum = 9;
 
     List<TestCaseBean> cases = new ArrayList<TestCaseBean>();
     //第0行为表头
-    for (int i = 1; i < rowNum+1; i++) {
+    for (int i = 1; i < rowNum + 1; i++) {
       ArrayList<ArrayList<String>> filds = new ArrayList<>();
       HashMap<String, String> fildHashmap = new HashMap<>();
 
-      for (int j = 6; j < sheet1.getRow(i).getLastCellNum(); j++) {
+      for (int j = fildStartNum; j < sheet1.getRow(i).getLastCellNum(); j++) {
         fildHashmap.put(
-                parseSheetContent(sheet1,0,j),//表头
+                parseSheetContent(sheet1, 0, j),//表头
                 parseSheetContent(sheet1, i, j));//值
       }
 
       TestCaseBean testCaseBeans = new TestCaseBean(
-              parseSheetContent(sheet1, i, 1),
-              parseSheetContent(sheet1, i, 2),
-              parseSheetContent(sheet1, i, 3),
-              parseSheetContent(sheet1, i, 4),
-              parseSheetContent(sheet1, i, 5),
-              fildHashmap);
+              parseSheetContent(sheet1, i, pakegeColNum),
+              parseSheetContent(sheet1, i, classColNum),
+              parseSheetContent(sheet1, i, methodColNum),
+              parseSheetContent(sheet1, i, mainboColNum),
+              parseSheetContent(sheet1, i, testMethdNum),
+              fildHashmap,
+//              Integer.valueOf(parseSheetContent(sheet1, i, mainboColNum))
+              0,
+              parseSheetContent(sheet1, i, assertSentenceNum),
+              parseSheetContent(sheet1, i, norPColNum)
+      );
 
       cases.add(testCaseBeans);
     }

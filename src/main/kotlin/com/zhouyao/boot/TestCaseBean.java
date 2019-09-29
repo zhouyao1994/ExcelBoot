@@ -1,10 +1,6 @@
 package com.zhouyao.boot;
 
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class TestCaseBean {
   private String PackageName;
@@ -12,6 +8,9 @@ public class TestCaseBean {
   private String MethodName;
   private String MainBO;
   private String TestMethod;
+  private Integer ForwardDependencyNum;
+  private String NorP;
+  private String AssertSentence;
   private Map<String, String> Fields;
 
 //  public TestCaseBean() {
@@ -35,14 +34,20 @@ public class TestCaseBean {
                       String mainBO,
                       String testMethod,
 //                      String[][] fields) {
-                      Map<String, String> fields) {
+                      Map<String, String> fields,
+                      Integer forwardDependencyNum,
+                      String assertSentence,
+                      String norP) {
     PackageName = packageName;
     ClassName = className;
     MethodName = methodName;
     MainBO = mainBO;
     TestMethod = testMethod;
 //    Fields = Stream.of(fields).collect(Collectors.toMap(data -> data[0], data -> data[1]));
-    Fields =  fields; }
+    Fields =  fields;
+    NorP = norP;
+    AssertSentence = assertSentence;
+  }
 
   public String getPackageName() {
     return PackageName;
@@ -90,5 +95,29 @@ public class TestCaseBean {
 
   public void setFields(Map<String, String> fields) {
     Fields = fields;
+  }
+
+  public Integer getForwardDependencyNum() {
+    return ForwardDependencyNum;
+  }
+
+  public void setForwardDependencyNum(Integer forwardDependencyNum) {
+    ForwardDependencyNum = forwardDependencyNum;
+  }
+
+  public String getAssertSentence() {
+    return AssertSentence;
+  }
+
+  public void setAssertSentence(String assertSentence) {
+    AssertSentence = assertSentence;
+  }
+
+  public String getNorP() {
+    return NorP;
+  }
+
+  public void setNorP(String norP) {
+    NorP = norP;
   }
 }
