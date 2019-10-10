@@ -52,6 +52,14 @@ public class CodeGenerate {
     Assert.assertEquals("xx", "xx");
   }
 
+  /**
+   * 输出java类文件，µ≥
+   * @param pakegeName
+   * @param className
+   * @param cases
+   * @param testCaseBeans
+   * @return
+   */
   private static JavaFile GenerateFiles(String pakegeName,
                                         String className,
                                         List<TestCaseBean> cases,
@@ -90,11 +98,29 @@ public class CodeGenerate {
 
 
 
-      //new 对象,N表示name，S表示String
-      builderLocal.addStatement("$N testObject = new $N()", mainBO, mainBO);
       //1.2 为新建BO设置属性
+      //new 对象,N表示name，S表示String
+      //新建大BO
+      builderLocal.addStatement("$N $N = new $N()", mainBO,mainBO.toLowerCase(), mainBO);
+
+
+      Set<String> fieldStrings = fields.keySet();
+      List<String> keys = new ArrayList<>(fieldStrings);
+      // 1.2.1获得不同的BO名字
+      List<String> bos = keys.stream().map(it -> it.split("\\.")[0]).distinct().collect(Collectors.toList());
+
+      //1.2.2新建小BO,并放入到大Bo中
+      bos.forEach(it->builderLocal.addStatement("$N $N = new $N()",it,it.toLowerCase(),it));
+      bos.forEach(it->builderLocal.addStatement("$N.set$N = $N",mainBO.toLowerCase(),it.toLowerCase(),it.toLowerCase()));
+
+
+      //1.2.3对Bo赋值
       fields.forEach((key, value) -> {
-        builderLocal.addStatement("testObject.set$N($S)", key, value);
+        if (key.contains(".")) {
+          String varName = key.split("\\.")[0].toLowerCase();
+          String fild = key.split("\\.")[1];
+          builderLocal.addStatement("$N.set$N($S)", varName,fild, value);
+        }
       });
 
       //1.3 run测试函数的逻辑代码
@@ -103,7 +129,7 @@ public class CodeGenerate {
       switch (nOrP) {
         case ("P"):
           //1.4添加 正常测试用例的：Assert 参数
-          builderLocal.addStatement("$N($N)", testMethod, "testObject");
+          builderLocal.addStatement("$N($N)", testMethod, mainBO.toLowerCase());
           Arrays.asList(assertSentence.split("\\;")).forEach(it->
                   builderLocal.addStatement(it)
           );
@@ -111,7 +137,7 @@ public class CodeGenerate {
         case ("N"):
           //1.5 添加异常测试用例的 Assert 参数
           builderLocal.beginControlFlow("try")
-                  .addStatement("$N($N)", testMethod, "testObject")
+                  .addStatement("$N($N)", testMethod, mainBO.toLowerCase())
                   .addStatement("Assert.fail()")
                   .nextControlFlow("catch ($T e)", Exception.class);
           Arrays.asList(assertSentence.split("\\;")).forEach(it->
