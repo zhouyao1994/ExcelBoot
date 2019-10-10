@@ -41,7 +41,7 @@ public class CodeGenerate {
       classGroupBy.forEach((className, cases) -> {
         try {
           System.out.println("=============");
-          GenerateFiles(pakegeName, className, cases).writeTo(System.out);
+          GenerateFiles(pakegeName, className, cases,testCaseBeans).writeTo(System.out);
         } catch (IOException e) {
           e.printStackTrace();
         }
@@ -54,7 +54,8 @@ public class CodeGenerate {
 
   private static JavaFile GenerateFiles(String pakegeName,
                                         String className,
-                                        java.util.List<TestCaseBean> cases) {
+                                        List<TestCaseBean> cases,
+                                        List<TestCaseBean> testCaseBeans) {
     TypeSpec.Builder builder = TypeSpec.classBuilder(className)
             .addModifiers(Modifier.PUBLIC, Modifier.FINAL);
     //1.先创建方法，有多个case
@@ -69,7 +70,7 @@ public class CodeGenerate {
       Map<String, String> fields = caseIt.getFields();
       String assertSentence = caseIt.getAssertSentence();
       String nOrP = caseIt.getNorP();
-      Integer forwardDependencyNum = caseIt.getForwardDependencyNum();
+      String forwardDependencyNum = caseIt.getForwardDependencyNum();
 
       //1.1 创建单个方法
       MethodSpec.Builder builderLocal = MethodSpec.methodBuilder(methodName)
@@ -78,6 +79,14 @@ public class CodeGenerate {
               .addParameter(String[].class, "args")
               .addStatement("// 测试用例");
 
+
+      //1.1.1添加前置依赖项
+      List<TestCaseBean> forwardCase = testCaseBeans.stream().filter(it ->
+              it.getTestCaseNum().equals(forwardDependencyNum)
+      ).collect(Collectors.toList());
+
+      forwardCase.forEach(it->
+              builderLocal.addStatement("$N()",it.getMethodName()));
 
 
 
@@ -129,10 +138,13 @@ public class CodeGenerate {
   }
 
   private static List<TestCaseBean> readXlsxFile(String filePath) throws IOException {
-    String path = "/Users/zhouyao/Downloads/CodeDemov1.xlsx";
+//    String path = "/Users/zhouyao/Downloads/CodeDemov1.xlsx";
+    String path = "/Users/zhouyao/Downloads/周耀-代码生成模板-v1.1.xlsx";
     XSSFWorkbook workbook = readFile(path);
     XSSFSheet sheet1 = workbook.getSheet("Sheet1");
     int rowNum = sheet1.getLastRowNum();
+
+    int testCaseNum = 0;
     int pakegeColNum = 1;
     int classColNum = 2;
     int methodColNum = 3;
@@ -140,6 +152,7 @@ public class CodeGenerate {
     int mainboColNum = 5;
     int assertSentenceNum = 6;
     int testMethdNum = 7;
+    int forwardDependencyNum = 8;
     int fildStartNum = 9;
 
     List<TestCaseBean> cases = new ArrayList<TestCaseBean>();
@@ -155,14 +168,15 @@ public class CodeGenerate {
       }
 
       TestCaseBean testCaseBeans = new TestCaseBean(
-              parseSheetContent(sheet1, i, pakegeColNum),
+               parseSheetContent(sheet1, i, testCaseNum),
+               parseSheetContent(sheet1, i, pakegeColNum),
               parseSheetContent(sheet1, i, classColNum),
               parseSheetContent(sheet1, i, methodColNum),
               parseSheetContent(sheet1, i, mainboColNum),
               parseSheetContent(sheet1, i, testMethdNum),
               fildHashmap,
 //              Integer.valueOf(parseSheetContent(sheet1, i, mainboColNum))
-              0,
+              parseSheetContent(sheet1, i, forwardDependencyNum),
               parseSheetContent(sheet1, i, assertSentenceNum),
               parseSheetContent(sheet1, i, norPColNum)
       );
@@ -173,7 +187,13 @@ public class CodeGenerate {
   }
 
   private static String parseSheetContent(XSSFSheet sheet, int row, int cell) {
-    return sheet.getRow(row).getCell(cell).toString();
+    String s="";
+    try {
+      s = sheet.getRow(row).getCell(cell).toString();
+    } catch (Exception e) {
+    }finally {
+      return s;
+    }
   }
 
   private static XSSFWorkbook readFile(String filename) throws IOException {

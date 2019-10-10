@@ -3,12 +3,13 @@ package com.zhouyao.boot;
 import java.util.Map;
 
 public class TestCaseBean {
+  private String TestCaseNum;
   private String PackageName;
   private String ClassName;
   private String MethodName;
   private String MainBO;
   private String TestMethod;
-  private Integer ForwardDependencyNum;
+  private String ForwardDependencyNum;
   private String NorP;
   private String AssertSentence;
   private Map<String, String> Fields;
@@ -28,16 +29,17 @@ public class TestCaseBean {
             '}';
   }
 
-  public TestCaseBean(String packageName,
+  public TestCaseBean(String testCaseNum, String packageName,
                       String className,
                       String methodName,
                       String mainBO,
                       String testMethod,
 //                      String[][] fields) {
                       Map<String, String> fields,
-                      Integer forwardDependencyNum,
+                      String forwardDependencyNum,
                       String assertSentence,
                       String norP) {
+    TestCaseNum = testCaseNum;
     PackageName = packageName;
     ClassName = className;
     MethodName = methodName;
@@ -45,8 +47,9 @@ public class TestCaseBean {
     TestMethod = testMethod;
 //    Fields = Stream.of(fields).collect(Collectors.toMap(data -> data[0], data -> data[1]));
     Fields =  fields;
-    NorP = norP;
+    ForwardDependencyNum=forwardDependencyNum;
     AssertSentence = assertSentence;
+    NorP = norP;
   }
 
   public String getPackageName() {
@@ -97,11 +100,11 @@ public class TestCaseBean {
     Fields = fields;
   }
 
-  public Integer getForwardDependencyNum() {
+  public String getForwardDependencyNum() {
     return ForwardDependencyNum;
   }
 
-  public void setForwardDependencyNum(Integer forwardDependencyNum) {
+  public void setForwardDependencyNum(String forwardDependencyNum) {
     ForwardDependencyNum = forwardDependencyNum;
   }
 
@@ -119,5 +122,13 @@ public class TestCaseBean {
 
   public void setNorP(String norP) {
     NorP = norP;
+  }
+
+  public String getTestCaseNum() {
+    return TestCaseNum;
+  }
+
+  public void setTestCaseNum(String testCaseNum) {
+    TestCaseNum = testCaseNum;
   }
 }
