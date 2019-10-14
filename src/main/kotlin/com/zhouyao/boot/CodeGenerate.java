@@ -18,11 +18,12 @@ import java.util.stream.Collectors;
 
 public class CodeGenerate {
   public static void main(String[] args) throws IOException {
+    String path =args[0];
 //    genarateDemo();
 
     //1.从excel读取配置文件
 //    List<TestCaseBean> testCaseBeans = GeneralBeans();
-    List<TestCaseBean> testCaseBeans = readXlsxFile("xx");
+    List<TestCaseBean> testCaseBeans = readXlsxFile(path);
 
     //2.处理
     //一个包下可以有多个类，每个类有多个方法。每个方法是一个testcase。
@@ -165,7 +166,8 @@ public class CodeGenerate {
 
   private static List<TestCaseBean> readXlsxFile(String filePath) throws IOException {
 //    String path = "/Users/zhouyao/Downloads/CodeDemov1.xlsx";
-    String path = "/Users/zhouyao/Downloads/周耀-代码生成模板-v1.1.xlsx";
+//    String path = "/Users/zhouyao/Downloads/周耀-代码生成模板-v1.1.xlsx";
+    String path=filePath;
     XSSFWorkbook workbook = readFile(path);
     XSSFSheet sheet1 = workbook.getSheet("Sheet1");
     int rowNum = sheet1.getLastRowNum();
